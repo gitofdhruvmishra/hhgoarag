@@ -5,6 +5,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#zero-dependencies)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/demo-Vercel%20Live-brightgreen.svg)](https://hhgoarag-gules.vercel.app)
 [![Demo Docs](https://img.shields.io/badge/docs-GitHub%20Pages-orange.svg)](https://gitofdhruvmishra.github.io/hhgoarag/)
 
 Vaani is a production-quality **Retrieval-Augmented Generation (RAG)** pipeline built entirely on the Python standard library — no pip installs, no model downloads, no build steps. Speak a question in English, Hindi, Bengali, Tamil, Telugu, or 6 more Indic languages; get a grounded, cited answer in under 200 ms.
