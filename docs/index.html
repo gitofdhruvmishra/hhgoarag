@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vaani — Voice-Native Multilingual RAG</title>
+  <meta name="description" content="Zero-dependency, 200ms voice RAG for 10 Indic languages. Pure Python stdlib." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a26;
+      --border: #2a2a3a;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --accent4: #f59e0b;
+      --text: #e8e8f0;
+      --text2: #9999bb;
+      --text3: #6666888;
+      --code-bg: #0d0d1a;
+      --radius: 12px;
+      --shadow: 0 4px 32px rgba(108,99,255,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a { color: var(--text2); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-badge {
+      background: var(--accent); color: #fff;
+      padding: 6px 16px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 600;
+      text-decoration: none; transition: opacity .2s;
+    }
+    .nav-badge:hover { opacity: 0.85; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 2rem 4rem;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.3);
+      color: var(--accent2); padding: 6px 16px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 500; margin-bottom: 1.5rem;
+    }
+    .hero-badge::before { content: '●'; color: var(--accent3); font-size: 0.6rem; }
+    h1 {
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 700; letter-spacing: -0.04em; line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    h1 .gradient {
+      background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 50%, var(--accent3) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text2); max-width: 640px;
+      margin-bottom: 2.5rem; line-height: 1.6;
+    }
+    .hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      padding: 14px 28px; border-radius: 10px; font-weight: 600;
+      text-decoration: none; font-size: 0.95rem; transition: all .2s;
+      border: 1px solid transparent;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.3); }
+    .btn-secondary {
+      background: transparent; color: var(--text);
+      padding: 14px 28px; border-radius: 10px; font-weight: 500;
+      text-decoration: none; font-size: 0.95rem;
+      border: 1px solid var(--border); transition: all .2s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent2); transform: translateY(-1px); }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem;
+      margin-top: 4rem; padding-top: 4rem;
+      border-top: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 700; color: var(--accent2); }
+    .stat-label { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+
+    /* ── Sections ── */
+    section { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+    h2 {
+      font-size: 2rem; font-weight: 700; letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+    }
+    h2 .tag { color: var(--accent2); }
+    .section-sub { color: var(--text2); margin-bottom: 3rem; max-width: 560px; }
+
+    /* ── Feature grid ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      transition: all .25s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(108,99,255,0.05) 0%, transparent 60%);
+      opacity: 0; transition: opacity .25s;
+    }
+    .feature-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-3px); box-shadow: var(--shadow); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .feature-title { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .feature-desc { color: var(--text2); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ── Pipeline diagram ── */
+    .pipeline-wrap {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem; overflow-x: auto;
+    }
+    .pipeline {
+      display: flex; align-items: center; gap: 0;
+      min-width: 700px;
+    }
+    .pipe-stage {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 0.65rem;
+      text-align: center;
+      font-size: 0.8rem;
+      position: relative;
+    }
+    .pipe-stage .pipe-name { font-weight: 600; color: var(--text); font-size: 0.82rem; }
+    .pipe-stage .pipe-detail { color: var(--text2); font-size: 0.7rem; margin-top: 3px; }
+    .pipe-stage.highlight { border-color: var(--accent); background: rgba(108,99,255,0.08); }
+    .pipe-stage.highlight .pipe-name { color: var(--accent2); }
+    .pipe-arrow { color: var(--text3); font-size: 1.2rem; padding: 0 0.3rem; flex-shrink: 0; }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem; overflow-x: auto;
+      position: relative;
+    }
+    .code-block .lang-tag {
+      position: absolute; top: 0.75rem; right: 1rem;
+      color: var(--text3); font-size: 0.72rem; text-transform: uppercase;
+    }
+    .code-block pre { color: var(--text2); }
+    .hl-green { color: var(--accent3); }
+    .hl-purple { color: var(--accent2); }
+    .hl-orange { color: var(--accent4); }
+    .hl-blue { color: #60a5fa; }
+    .hl-dim { color: #555577; }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 1.5rem; }
+    .step {
+      display: flex; gap: 1.25rem;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: var(--accent); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem;
+    }
+    .step-body h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .step-body p { color: var(--text2); font-size: 0.9rem; }
+
+    /* ── Config table ── */
+    .config-table { width: 100%; border-collapse: collapse; }
+    .config-table th, .config-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .config-table th { color: var(--text2); font-weight: 500; font-size: 0.85rem; }
+    .config-table td { font-size: 0.9rem; }
+    .config-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent3); }
+    .config-table td:nth-child(2) { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent4); }
+    .config-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Lang pills ── */
+    .lang-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+    .lang-pill {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 999px; padding: 8px 16px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; transition: border-color .2s;
+    }
+    .lang-pill:hover { border-color: var(--accent); }
+    .lang-code { color: var(--accent2); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem; text-align: center;
+      color: var(--text2); font-size: 0.88rem;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .stats { gap: 1.25rem; }
+      .pipeline { min-width: 500px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav>
+  <div class="nav-logo">🎙️ <span>Vaani</span></div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#quickstart">Quick Start</a></li>
+    <li><a href="#docs">Docs</a></li>
+    <li><a href="#config">Config</a></li>
+  </ul>
+  <a class="nav-badge" href="https://github.com/gitofdhruvmishra/hhgoarag" target="_blank">⭐ GitHub</a>
+</nav>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-badge">Voice-Native Multilingual RAG · Task 2 Submission</div>
+  <h1>
+    Ask in <span class="gradient">Any Indian Language</span><br/>Get Answers in 200 ms
+  </h1>
+  <p class="hero-sub">
+    Vaani is a production-quality RAG pipeline over the <strong>MSMARCO-XI Indic</strong> dataset — 
+    built entirely on the Python standard library. No pip install. No model downloads. 
+    Just <code>python3 run.py</code>.
+  </p>
+  <div class="hero-ctas">
+    <a href="#quickstart" class="btn-primary">🚀 Quick Start</a>
+    <a href="https://github.com/gitofdhruvmishra/hhgoarag" target="_blank" class="btn-secondary">View on GitHub →</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num">0</div><div class="stat-label">pip installs required</div></div>
+    <div class="stat"><div class="stat-num">200ms</div><div class="stat-label">pipeline budget</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Indic languages</div></div>
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">chunking strategies</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">STT providers</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">guardrail checks</div></div>
+  </div>
+</div>
+
+<!-- ── Features ── -->
+<section id="features">
+  <h2><span class="tag">01.</span> Features</h2>
+  <p class="section-sub">Every component is designed around two constraints: zero external dependencies and a 200 ms end-to-end budget.</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Zero Dependencies</div>
+      <div class="feature-desc">The entire system runs on Python's standard library. No sentence-transformers, no FAISS, no spaCy. Dense embeddings are earned from the corpus itself via PPMI + random indexing — no checkpoint files to ship.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⏱️</div>
+      <div class="feature-title">200 ms Budget Enforcement</div>
+      <div class="feature-desc">The orchestrator proactively sheds optional stages — query expansion, reranking, MMR diversification — <em>before</em> blowing the budget. Two-stage retrieval (sparse candidates → dense re-score) keeps cost proportional to candidate count, not corpus size.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Hybrid Retrieval</div>
+      <div class="feature-desc">BM25 sparse search generates candidates. PPMI random-index dense embedder re-scores them. Scores fused with Reciprocal Rank Fusion. Optional cross-encoder rerank and MMR diversity pass.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">✂️</div>
+      <div class="feature-title">7 Chunking Strategies</div>
+      <div class="feature-desc">Fixed sliding window · Recursive structural splitting · Sentence window (±N neighbours) · Semantic drift-based boundaries · Proposition (atomic statements) · Metadata-aware · Hierarchical small-to-big. All run at index time; retrieval can filter by strategy.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎙️</div>
+      <div class="feature-title">Voice Input</div>
+      <div class="feature-desc">Real Sarvam AI and ElevenLabs STT clients with fallback chain. Browser Web Speech API as zero-key path — the demo works without any API key. ASR output is repaired against corpus vocabulary before retrieval.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Full Guardrail Stack</div>
+      <div class="feature-desc"><strong>Input:</strong> length check · safety classifier · injection detector · PII redactor · off-topic gate. <strong>Output:</strong> grounding overlap · entity support · number check · contradiction detector · confidence floor.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌏</div>
+      <div class="feature-title">Script-Aware Tokenization</div>
+      <div class="feature-desc">One tokenizer for all 10 languages. Classifies characters by Unicode script block — Devanagari, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Punjabi, Oriya, Latin. CJK handled by unigram + bigram indexing. Danda (।) and double danda (॥) are recognized sentence terminators.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <div class="feature-title">Grounded Answer Generation</div>
+      <div class="feature-desc">Extractive generator scores and selects sentence spans from retrieved chunks. Every sentence is cited to its source passage. LLM mode (Claude) available as opt-in enrichment, latency reported separately.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Built-in Benchmarking</div>
+      <div class="feature-desc">300-query latency harness with warmup, cold-cache mode, and percentile reporting (p50/p70/p90/p95/p99/p100). Circuit breakers, retry with exponential back-off + jitter, and full request tracing ring buffer.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pipeline ── -->
+<section id="pipeline">
+  <h2><span class="tag">02.</span> Pipeline Architecture</h2>
+  <p class="section-sub">Every stage has a declared timeout, retry policy, contract validator, and fallback. Failure modes are part of the type system.</p>
+
+  <div class="pipeline-wrap">
+    <div class="pipeline">
+      <div class="pipe-stage">
+        <div class="pipe-name">🎙️ Voice Input</div>
+        <div class="pipe-detail">mic / typed text</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage highlight">
+        <div class="pipe-name">STT</div>
+        <div class="pipe-detail">Sarvam · ElevenLabs · Browser</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage">
+        <div class="pipe-name">🛡️ Guard In</div>
+        <div class="pipe-detail">safety · inject · PII</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage">
+        <div class="pipe-name">🔄 Query Xform</div>
+        <div class="pipe-detail">expand · ASR repair</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage highlight">
+        <div class="pipe-name">🔍 Hybrid Retrieval</div>
+        <div class="pipe-detail">BM25→dense→RRF→MMR</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage highlight">
+        <div class="pipe-name">✍️ Generation</div>
+        <div class="pipe-detail">extractive / LLM</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-stage">
+        <div class="pipe-name">🛡️ Guard Out</div>
+        <div class="pipe-detail">grounding · entities</div>
+      </div>
+    </div>
+  </div>
+
+  <br/>
+
+  <div class="feature-grid" style="margin-top:1.5rem">
+    <div class="feature-card">
+      <div class="feature-title">🧮 Dense Embedder (no files)</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        <strong>Step 1 – Co-occurrence:</strong> Slide a window over the corpus, count term pairs.<br/>
+        <strong>Step 2 – PPMI:</strong> Convert raw counts to Positive PMI with Levy & Goldberg smoothing.<br/>
+        <strong>Step 3 – Random Indexing:</strong> Each term gets a seeded ternary hash signature. Embeddings = PPMI-weighted sum of context signatures. Johnson-Lindenstrauss projection, zero storage.<br/>
+        <strong>SIF removal:</strong> Subtract dominant corpus direction so short queries stop pointing at "generic prose".
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">⚡ Budget Shedding Logic</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        At 75% of the 200 ms budget, the orchestrator starts dropping optional stages in order of cost:<br/><br/>
+        1. Query expansion (extra retrieval passes)<br/>
+        2. Cross-encoder reranking<br/>
+        3. MMR diversification<br/><br/>
+        The mandatory path — embed → retrieve candidates → dense score → extractive generate — always runs. Optional enrichments only run if budget remains.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quick Start ── -->
+<section id="quickstart">
+  <h2><span class="tag">03.</span> Quick Start</h2>
+  <p class="section-sub">Get running in under 60 seconds with zero API keys.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Clone the repository</h3>
+        <div class="code-block" style="margin-top:0.75rem">
+          <span class="lang-tag">bash</span>
+          <pre><span class="hl-green">git</span> clone https://github.com/gitofdhruvmishra/hhgoarag.git
+<span class="hl-blue">cd</span> hhgoarag</pre>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Run (no pip install!)</h3>
+        <div class="code-block" style="margin-top:0.75rem">
+          <span class="lang-tag">bash</span>
+          <pre><span class="hl-green">python3</span> run.py
+<span class="hl-dim"># → Builds index from offline corpus (~5s first run)</span>
+<span class="hl-dim"># → Opens http://127.0.0.1:7860 in your browser</span></pre>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Optional: Add API keys for enhanced features</h3>
+        <div class="code-block" style="margin-top:0.75rem">
+          <span class="lang-tag">bash</span>
+          <pre><span class="hl-dim"># Cloud speech-to-text (Sarvam AI)</span>
+<span class="hl-blue">export</span> <span class="hl-orange">SARVAM_API_KEY</span>=your_key_here
+
+<span class="hl-dim"># ElevenLabs STT (alternative)</span>
+<span class="hl-blue">export</span> <span class="hl-orange">ELEVENLABS_API_KEY</span>=your_key_here
+
+<span class="hl-dim"># Claude LLM for enriched answers</span>
+<span class="hl-blue">export</span> <span class="hl-orange">ANTHROPIC_API_KEY</span>=your_key_here
+
+<span class="hl-green">python3</span> run.py</pre>
+        </div>
+        <p style="color:var(--text2); font-size:0.85rem; margin-top:0.75rem">
+          💡 Without any keys, the browser's Web Speech API handles voice, and extractive generation produces answers — the full demo works.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Try some queries</h3>
+        <div class="code-block" style="margin-top:0.75rem">
+          <span class="lang-tag">examples</span>
+          <pre><span class="hl-green">English:</span>  What is the capital of Maharashtra?
+<span class="hl-purple">Hindi:</span>    भारत में सबसे लंबी नदी कौन सी है?
+<span class="hl-orange">Bengali:</span>  বাংলাদেশের জাতীয় ফুল কী?
+<span class="hl-blue">Tamil:</span>    தமிழ்நாட்டின் தலைநகரம் எது?</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Languages ── -->
+<section id="languages">
+  <h2><span class="tag">04.</span> Supported Languages</h2>
+  <p class="section-sub">Script-aware tokenization — no per-language model. Works on MSMARCO-XI Indic passages.</p>
+  <div class="lang-grid">
+    <div class="lang-pill"><span class="lang-code">en-IN</span> English</div>
+    <div class="lang-pill"><span class="lang-code">hi-IN</span> हिन्दी Hindi</div>
+    <div class="lang-pill"><span class="lang-code">bn-IN</span> বাংলা Bengali</div>
+    <div class="lang-pill"><span class="lang-code">ta-IN</span> தமிழ் Tamil</div>
+    <div class="lang-pill"><span class="lang-code">te-IN</span> తెలుగు Telugu</div>
+    <div class="lang-pill"><span class="lang-code">mr-IN</span> मराठी Marathi</div>
+    <div class="lang-pill"><span class="lang-code">gu-IN</span> ગુજરાતી Gujarati</div>
+    <div class="lang-pill"><span class="lang-code">kn-IN</span> ಕನ್ನಡ Kannada</div>
+    <div class="lang-pill"><span class="lang-code">ml-IN</span> മലയാളം Malayalam</div>
+    <div class="lang-pill"><span class="lang-code">pa-IN</span> ਪੰਜਾਬੀ Punjabi</div>
+  </div>
+</section>
+
+<!-- ── Config ── -->
+<section id="config">
+  <h2><span class="tag">05.</span> Configuration</h2>
+  <p class="section-sub">All config lives in typed dataclasses with sane defaults. Override any field with an environment variable.</p>
+
+  <div class="pipeline-wrap">
+    <table class="config-table">
+      <thead>
+        <tr>
+          <th>Environment Variable</th>
+          <th>Default</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>SARVAM_API_KEY</td><td>—</td><td>Sarvam AI STT key (optional)</td></tr>
+        <tr><td>ELEVENLABS_API_KEY</td><td>—</td><td>ElevenLabs STT key (optional)</td></tr>
+        <tr><td>ANTHROPIC_API_KEY</td><td>—</td><td>Claude LLM key for enriched answers (optional)</td></tr>
+        <tr><td>VAANI_PORT</td><td>7860</td><td>Server port</td></tr>
+        <tr><td>VAANI_HOST</td><td>127.0.0.1</td><td>Server bind address</td></tr>
+        <tr><td>VAANI_GENERATOR</td><td>extractive</td><td>Answer mode: <code>extractive</code> or <code>llm</code></td></tr>
+        <tr><td>VAANI_DATASET_SOURCE</td><td>auto</td><td>Corpus: <code>auto</code> / <code>hf</code> / <code>offline</code></td></tr>
+        <tr><td>VAANI_BUDGET_MS</td><td>200</td><td>Pipeline latency budget in ms</td></tr>
+        <tr><td>VAANI_GUARDRAILS</td><td>true</td><td>Enable/disable full guardrail stack</td></tr>
+        <tr><td>VAANI_STT_PROVIDER</td><td>sarvam</td><td>Preferred STT provider</td></tr>
+        <tr><td>VAANI_OPEN_BROWSER</td><td>true</td><td>Auto-open browser on start</td></tr>
+        <tr><td>VAANI_VERBOSE</td><td>false</td><td>Verbose logging</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Docs ── -->
+<section id="docs">
+  <h2><span class="tag">06.</span> Module Reference</h2>
+  <p class="section-sub">Every module has a docstring explaining its design decisions. Here's the map.</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-title">vaani/textkit.py</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        Script-aware tokenizer · normalizer · sentence splitter · language detector · stemmer · entity extractor · query classifier · similarity helpers (Jaccard, overlap coefficient, token F1).
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/embed.py</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        PPMI co-occurrence matrix → random-index projection → unit-normalized vectors. All arithmetic via <code>math.sumprod</code> over <code>array.array</code> buffers (C speed). No files to ship.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/config.py</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        9 nested dataclasses: Chunking · Retrieval · Generation · Guardrail · STT · Harness · Server · Dataset · Bench. Environment-variable overlay. Never errors on missing credentials.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/harness/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        <strong>orchestrator.py</strong> — Deadline tracker, stage runner, budget shedding, circuit breaker.<br/>
+        <strong>contracts.py</strong> — Typed data contracts for every stage boundary.<br/>
+        <strong>errors.py</strong> — Error taxonomy with <code>retryable</code> + <code>degradable</code> flags.<br/>
+        <strong>retry.py</strong> — Exponential back-off with jitter.<br/>
+        <strong>tracing.py</strong> — Ring-buffer trace store for the UI.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/chunking/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        7 strategies: <code>fixed</code> · <code>recursive</code> · <code>sentence_window</code> · <code>semantic</code> · <code>proposition</code> · <code>metadata_aware</code> · <code>hierarchical</code>. Near-duplicate collapse at 94% Jaccard threshold.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/retrieval/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        BM25 (k1=1.4, b=0.72) · dense scorer · RRF fusion (k=60) · cross-encoder reranker · MMR (λ=0.72) · query expansion · ASR repair against corpus vocabulary.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/generation/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        Extractive generator: score sentences against query, select top-N, add citations and exact quote spans. LLM generator: Claude API with grounding-aware prompt, latency measured separately.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/guardrails/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        Input rails: length · safety · injection · PII · off-topic coverage. Output rails: grounding overlap (>52%) · entity support (>72%) · number check · contradiction check · confidence floor (>30%).
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">vaani/stt/</div>
+      <div class="feature-desc" style="margin-top:0.5rem">
+        Sarvam AI client (<code>saarika:v2.5</code>) · ElevenLabs client (<code>scribe_v1</code>) · browser Web Speech API bridge. Fallback chain: tries each in order based on key presence.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    Built for <strong>HHG Task 2</strong> — Vaani v1.0.0 ·
+    <a href="https://github.com/gitofdhruvmishra/hhgoarag">GitHub</a> ·
+    Dataset: <a href="https://huggingface.co/datasets/ai4bharat/MSMARCO-XI" target="_blank">ai4bharat/MSMARCO-XI</a>
+  </p>
+  <p style="margin-top:0.5rem; color: #444466; font-size:0.8rem;">MIT License · 2026</p>
+</footer>
+
+</body>
+</html>
