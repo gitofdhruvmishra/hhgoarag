@@ -1,0 +1,49 @@
+# --- Vaani: build artifacts -------------------------------------------------
+# The index is rebuilt from the corpus on first run, so it is never committed.
+artifacts/
+*.vaani-index
+*.vecs
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Secrets ----------------------------------------------------------------
+# Vaani reads SARVAM_API_KEY / ELEVENLABS_API_KEY / ANTHROPIC_API_KEY from the
+# environment. Never commit a file that holds them.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# --- Editor / OS ------------------------------------------------------------
+.DS_Store
+.idea/
+*.swp
+*.swo
+Thumbs.db
+
+# --- Agent tooling ----------------------------------------------------------
+.claude/
+.gemini/
+
+# --- Node (the frontend has no build step, but keep this honest) ------------
+node_modules/
+npm-debug.log*
